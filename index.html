@@ -2063,7 +2063,8 @@
         /* === RESET внутри виджета === */
         #palette-widget * {
             box-sizing: border-box;
-            font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: 'Namu', Arial, sans-serif;
+            
         }
 
         /* === Контейнер === */
@@ -2107,13 +2108,15 @@
             text-align: center;
             transition: border-color 0.2s ease;
             display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
 
         #palette-widget #dropZone:hover {
-            border-color: #000;
+            border-color: #FACAB2;
         }
 
-        /* === Кнопка загрузки === */
         #palette-widget input[type="file"] {
             display: none;
         }
@@ -2180,7 +2183,6 @@
 
         /* === Кнопки === */
         #palette-widget button {
-            margin-top: 32px;
             padding: 12px 20px;
             border-radius: 10px;
             border: 1px solid #ddd;
@@ -2196,8 +2198,31 @@
         /* === Сообщения === */
         #palette-widget #message {
             margin-top: 16px;
+            font-size: 20px;
+            color: #b41b1b;
+        }
+
+        #palette-widget .dropzone-btn {
+            display: inline-block;
+            background: #2ecc71;
+            color: #fff;
+            border-radius: 8px;
+            padding: 12px 20px;
             font-size: 14px;
-            color: #0a7d32;
+            font-weight: 500;
+            cursor: pointer;
+            margin-bottom: 32px;
+        }
+
+        .palette-widget__buttons {
+            display: none;
+            flex-direction: row;
+            gap: 16px;
+        }
+
+        .palette-widget__copy {
+            margin-top: 24px;
+            display: none;
         }
 
         /* === Мобилка === */
@@ -7247,21 +7272,32 @@
             </div>
         </header>
 
-        <div id="palette-widget">
+        <div id="palette-widget" class="palette-widget">
 
             <h1 class="palette-widget__title">Определение палитры цветов по фото</h1>
 
             <p class="palette-widget__desc">
-                Загрузите изображение — получите 10 основных цветов. <br> Клик по цвету копирует HEX.
+                Загрузите изображение — получите 10 основных цветов.
             </p>
 
             <input type="file" id="fileInput" accept="image/*" />
 
-            <input type="file" id="fileInput" accept="image/*">
+            <label class="dropZone" id="dropZone" for="fileInput">
 
-            <label id="dropZone" for="fileInput">
-            Перетащите изображение сюда
+                <div class="dropzone-content">
+
+                    <span type="button" class="dropzone-btn">
+                        Загрузить изображение
+                    </span>
+
+                    <div class="dropzone-text">
+                        Или перетащите изображение сюда
+                    </div>
+
+                </div>
+
             </label>
+
 
             <div>
                 <img id="preview" alt="Preview" />
@@ -7269,7 +7305,11 @@
 
             <div id="palette"></div>
 
-            <div>
+            <p class="palette-widget__copy">
+                Клик по цвету копирует HEX.
+            </p>
+
+            <div class="palette-widget__buttons">
                 <button id="downloadBtn">Скачать PNG</button>
                 <button id="replaceBtn">Заменить фото</button>
             </div>
@@ -13352,12 +13392,10 @@ t-form__inputsbox_vertical-form t-form__inputsbox_inrow ">
 
     <script>
         (() => {
-            /* ================== CONFIG ================== */
-            const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
-            const MAX_ANALYZE_SIZE = 1000; // max side in px
+            const MAX_FILE_SIZE = 10 * 1024 * 1024;
+            const MAX_ANALYZE_SIZE = 1000;
             const COLORS_COUNT = 10;
 
-            /* ================== ELEMENTS ================== */
             const widget = document.getElementById('palette-widget');
             const fileInput = document.getElementById('fileInput');
             const dropZone = document.getElementById('dropZone');
@@ -13372,11 +13410,14 @@ t-form__inputsbox_vertical-form t-form__inputsbox_inrow ">
             let originalImage = null;
             let paletteColors = [];
 
-            /* ================== HELPERS ================== */
             function showMessage(text) {
                 messageEl.textContent = text;
-                setTimeout(() => messageEl.textContent = '', 1500);
             }
+
+            function clearMessage() {
+                messageEl.textContent = '';
+            }
+
 
             function rgbToHex(rgb) {
                 return (
@@ -13397,7 +13438,7 @@ t-form__inputsbox_vertical-form t-form__inputsbox_inrow ">
                 }
 
                 if (!file.type.startsWith('image/')) {
-                    showMessage('Неподдерживаемый формат');
+                    showMessage('Неподдерживаемый формат. Попробуйте JPG/PNG/WebP');
                     return false;
                 }
 
@@ -13425,7 +13466,6 @@ t-form__inputsbox_vertical-form t-form__inputsbox_inrow ">
                 return resized;
             }
 
-            /* ================== PALETTE ================== */
             function renderPalette(colors) {
                 paletteEl.innerHTML = '';
                 paletteColors = colors;
@@ -13436,20 +13476,36 @@ t-form__inputsbox_vertical-form t-form__inputsbox_inrow ">
                     item.textContent = hex;
                     item.dataset.hex = hex;
 
-                    // 🔥 ВАЖНО: фон = HEX
                     item.style.backgroundColor = hex;
-
-                    // цвет текста по контрасту (чёрный / белый)
                     item.style.color = getContrastColor(hex);
 
-                    item.addEventListener('click', () => {
+                    item.addEventListener('click', (e) => {
+                        e.stopPropagation();
+
+                        resetPaletteTexts();
+
                         navigator.clipboard.writeText(hex);
-                        showMessage('Скопировано ✓');
+                        item.textContent = 'Скопировано';
                     });
 
                     paletteEl.appendChild(item);
                 });
             }
+
+            function resetPaletteTexts() {
+                const items = paletteEl.querySelectorAll('div');
+
+                items.forEach(item => {
+                    item.textContent = item.dataset.hex;
+                });
+            }
+
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#palette div')) {
+                    resetPaletteTexts();
+                }
+            });
+
 
             function getContrastColor(hex) {
                 const r = parseInt(hex.substr(1, 2), 16);
@@ -13475,8 +13531,9 @@ t-form__inputsbox_vertical-form t-form__inputsbox_inrow ">
                 };
             }
 
-            /* ================== IMAGE LOAD ================== */
             function handleFile(file) {
+                clearMessage();
+
                 if (!validateFile(file)) return;
 
                 const reader = new FileReader();
@@ -13488,11 +13545,16 @@ t-form__inputsbox_vertical-form t-form__inputsbox_inrow ">
                     img.onload = () => {
                         originalImage = img;
                         preview.src = img.src;
+
+                        document.querySelector('.palette-widget__buttons').style.display = 'flex';
+                        document.querySelector(".dropZone").style.display = 'none';
+                        document.querySelector(".palette-widget__copy").style.display = 'block';
+
                         extractPalette(img);
                     };
 
                     img.onerror = () => {
-                        showMessage('Не удалось прочитать изображение');
+                        showMessage('Не удалось прочитать изображение. Попробуйте JPG/PNG/WebP');
                     };
 
                     img.src = reader.result;
@@ -13501,15 +13563,16 @@ t-form__inputsbox_vertical-form t-form__inputsbox_inrow ">
                 reader.readAsDataURL(file);
             }
 
-            /* ================== EVENTS ================== */
             fileInput.addEventListener('change', e => {
                 handleFile(e.target.files[0]);
                 fileInput.value = '';
             });
 
             replaceBtn.addEventListener('click', () => {
+                clearMessage();
                 fileInput.click();
             });
+
 
             dropZone.addEventListener('dragover', e => {
                 e.preventDefault();
@@ -13520,9 +13583,10 @@ t-form__inputsbox_vertical-form t-form__inputsbox_inrow ">
                 handleFile(e.dataTransfer.files[0]);
             });
 
-            /* ================== DOWNLOAD PNG ================== */
             downloadBtn.addEventListener('click', () => {
                 if (!originalImage || !paletteColors.length) return;
+
+                const SCALE = 2;
 
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
@@ -13535,8 +13599,10 @@ t-form__inputsbox_vertical-form t-form__inputsbox_inrow ">
                 const imgWidth = originalImage.width;
                 const imgHeight = originalImage.height;
 
-                canvas.width = imgWidth;
-                canvas.height = imgHeight + padding + swatchHeight * rows;
+                canvas.width = imgWidth * SCALE;
+                canvas.height = (imgHeight + padding + swatchHeight * rows) * SCALE;
+
+                ctx.scale(SCALE, SCALE);
 
                 ctx.fillStyle = '#ffffff';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -13544,6 +13610,7 @@ t-form__inputsbox_vertical-form t-form__inputsbox_inrow ">
                 ctx.drawImage(originalImage, 0, 0);
 
                 ctx.fillStyle = '#000000';
+                ctx.font = '16px sans-serif';
                 ctx.fillText(
                     'Сгенерировано на diskill.ru',
                     10,
@@ -13554,14 +13621,14 @@ t-form__inputsbox_vertical-form t-form__inputsbox_inrow ">
                     const col = i % cols;
                     const row = Math.floor(i / cols);
 
-                    const x = col * (canvas.width / cols);
+                    const x = col * (imgWidth / cols);
                     const y = imgHeight + padding + row * swatchHeight;
 
                     ctx.fillStyle = hex;
                     ctx.fillRect(
                         x,
                         y,
-                        canvas.width / cols,
+                        imgWidth / cols,
                         swatchHeight
                     );
 
@@ -13577,6 +13644,7 @@ t-form__inputsbox_vertical-form t-form__inputsbox_inrow ">
                     URL.revokeObjectURL(link.href);
                 });
             });
+
 
         })();
     </script>
