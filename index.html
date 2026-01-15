@@ -153,6 +153,9 @@
                 document.addEventListener('DOMContentLoaded', t_setvisRecs);
             }
         })();</script>
+
+
+
     <style>
         .t-skiplink {
             position: absolute;
@@ -2064,7 +2067,7 @@
         #palette-widget * {
             box-sizing: border-box;
             font-family: 'Namu', Arial, sans-serif;
-            
+
         }
 
         /* === Контейнер === */
@@ -7310,8 +7313,9 @@
             </p>
 
             <div class="palette-widget__buttons">
-                <button id="downloadBtn">Скачать PNG</button>
-                <button id="replaceBtn">Заменить фото</button>
+                <button id="downloadBtn">Скачать изображение с палитрой</button>
+                <button id="downloadSecondBtn">Скачать палитру</button>
+                <button id="replaceBtn">Заменить изображение</button>
             </div>
 
             <div id="message"></div>
@@ -13390,6 +13394,8 @@ t-form__inputsbox_vertical-form t-form__inputsbox_inrow ">
 
     <script src="https://unpkg.com/colorthief@2.3.2/dist/color-thief.umd.js"></script>
 
+    <script src="https://cdn.jsdelivr.net/npm/heic-to@1.3.0/dist/iife/heic-to.js"></script>
+
     <script>
         (() => {
             const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -13402,6 +13408,7 @@ t-form__inputsbox_vertical-form t-form__inputsbox_inrow ">
             const preview = document.getElementById('preview');
             const paletteEl = document.getElementById('palette');
             const downloadBtn = document.getElementById('downloadBtn');
+            const downloadSecondBtn = document.getElementById('downloadSecondBtn');
             const replaceBtn = document.getElementById('replaceBtn');
             const messageEl = document.getElementById('message');
 
@@ -13409,6 +13416,29 @@ t-form__inputsbox_vertical-form t-form__inputsbox_inrow ">
 
             let originalImage = null;
             let paletteColors = [];
+
+            async function isHeicFile(file) {
+                try {
+                    return await HeicTo.isHeic(file);
+                } catch (e) {
+                    return false;
+                }
+            }
+
+            async function convertHeicToImage(file) {
+                const result = await HeicTo({
+                    blob: file,
+                    type: "image/jpeg",
+                    quality: 0.8
+                });
+
+                return new Promise(resolve => {
+                    const img = new Image();
+                    img.onload = () => resolve(img);
+                    img.src = URL.createObjectURL(result);
+                });
+            }
+
 
             function showMessage(text) {
                 messageEl.textContent = text;
@@ -13437,13 +13467,18 @@ t-form__inputsbox_vertical-form t-form__inputsbox_inrow ">
                     return false;
                 }
 
-                if (!file.type.startsWith('image/')) {
-                    showMessage('Неподдерживаемый формат. Попробуйте JPG/PNG/WebP');
+                const isImage =
+                    file.type.startsWith('image/') ||
+                    file.name.toLowerCase().endsWith('.heic');
+
+                if (!isImage) {
+                    showMessage('Неподдерживаемый формат. Попробуйте JPG/PNG/WebP/HEIC');
                     return false;
                 }
 
                 return true;
             }
+
 
             function resizeForAnalysis(img) {
                 const canvas = document.createElement('canvas');
@@ -13531,37 +13566,55 @@ t-form__inputsbox_vertical-form t-form__inputsbox_inrow ">
                 };
             }
 
-            function handleFile(file) {
+            async function handleFile(file) {
                 clearMessage();
-
                 if (!validateFile(file)) return;
 
-                const reader = new FileReader();
+                if (await isHeicFile(file)) {
+                    showMessage('Конвертация HEIC…');
 
+                    try {
+                        const img = await convertHeicToImage(file);
+
+                        originalImage = img;
+                        preview.src = img.src;
+
+                        document.querySelector('.palette-widget__buttons').style.display = 'flex';
+                        document.querySelector('.dropZone').style.display = 'none';
+                        document.querySelector('.palette-widget__copy').style.display = 'block';
+
+                        extractPalette(img);
+                        clearMessage();
+                    } catch (e) {
+                        console.error(e);
+                        showMessage('Не удалось конвертировать HEIC');
+                    }
+
+                    return;
+                }
+
+                // обычная логика для JPG/PNG
+                const reader = new FileReader();
                 reader.onload = () => {
                     const img = new Image();
                     img.crossOrigin = 'anonymous';
-
                     img.onload = () => {
                         originalImage = img;
                         preview.src = img.src;
 
                         document.querySelector('.palette-widget__buttons').style.display = 'flex';
-                        document.querySelector(".dropZone").style.display = 'none';
-                        document.querySelector(".palette-widget__copy").style.display = 'block';
+                        document.querySelector('.dropZone').style.display = 'none';
+                        document.querySelector('.palette-widget__copy').style.display = 'block';
 
                         extractPalette(img);
                     };
-
-                    img.onerror = () => {
-                        showMessage('Не удалось прочитать изображение. Попробуйте JPG/PNG/WebP');
-                    };
-
+                    img.onerror = () => showMessage('Не удалось прочитать изображение');
                     img.src = reader.result;
                 };
-
                 reader.readAsDataURL(file);
             }
+
+
 
             fileInput.addEventListener('change', e => {
                 handleFile(e.target.files[0]);
@@ -13608,6 +13661,66 @@ t-form__inputsbox_vertical-form t-form__inputsbox_inrow ">
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
                 ctx.drawImage(originalImage, 0, 0);
+
+                ctx.fillStyle = '#000000';
+                ctx.font = '16px sans-serif';
+                ctx.fillText(
+                    'Сгенерировано на diskill.ru',
+                    10,
+                    imgHeight + 25
+                );
+
+                paletteColors.forEach((hex, i) => {
+                    const col = i % cols;
+                    const row = Math.floor(i / cols);
+
+                    const x = col * (imgWidth / cols);
+                    const y = imgHeight + padding + row * swatchHeight;
+
+                    ctx.fillStyle = hex;
+                    ctx.fillRect(
+                        x,
+                        y,
+                        imgWidth / cols,
+                        swatchHeight
+                    );
+
+                    ctx.fillStyle = '#000000';
+                    ctx.fillText(hex, x + 10, y + 30);
+                });
+
+                canvas.toBlob(blob => {
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = 'palette.png';
+                    link.click();
+                    URL.revokeObjectURL(link.href);
+                });
+            });
+
+            downloadSecondBtn.addEventListener('click', () => {
+                if (!paletteColors.length) return;
+
+                const SCALE = 2;
+
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+
+                const padding = 40;
+                const swatchHeight = 80;
+                const rows = 2;
+                const cols = 5;
+
+                const imgWidth = 500;
+                const imgHeight = 0;
+
+                canvas.width = imgWidth * SCALE;
+                canvas.height = (imgHeight + padding + swatchHeight * rows) * SCALE;
+
+                ctx.scale(SCALE, SCALE);
+
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
 
                 ctx.fillStyle = '#000000';
                 ctx.font = '16px sans-serif';
