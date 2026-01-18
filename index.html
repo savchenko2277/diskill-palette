@@ -2063,14 +2063,12 @@
 
     <!-- === Стили виджета === -->
     <style>
-        /* === RESET внутри виджета === */
         #palette-widget * {
             box-sizing: border-box;
             font-family: 'Namu', Arial, sans-serif;
 
         }
 
-        /* === Контейнер === */
         #palette-widget {
             max-width: 960px;
             margin: 0 auto;
@@ -2079,7 +2077,6 @@
             padding-top: 160px;
         }
 
-        /* === Заголовки === */
         #palette-widget h1 {
             font-size: 40px;
             line-height: 1.2;
@@ -2220,7 +2217,12 @@
         .palette-widget__buttons {
             display: none;
             flex-direction: row;
+            flex-wrap: wrap;
             gap: 16px;
+
+            button {
+                flex: 1 1 auto;
+            }
         }
 
         .palette-widget__copy {
