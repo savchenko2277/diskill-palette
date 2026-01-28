@@ -13691,14 +13691,17 @@ t-form__inputsbox_vertical-form t-form__inputsbox_inrow ">
                     ctx.fillText(hex, x + 10, y + 30);
                 });
 
-                canvas.toBlob(blob => {
-                    const link = document.createElement('a');
-                    link.href = URL.createObjectURL(blob);
-                    link.download = 'palette.png';
-                    link.click();
-                    URL.revokeObjectURL(link.href);
-                });
+                const dataUrl = canvas.toDataURL('image/png');
+
+                const link = document.createElement('a');
+                link.href = dataUrl;
+                link.download = 'palette-with-image.png';
+
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
             });
+
 
             downloadSecondBtn.addEventListener('click', () => {
                 if (!paletteColors.length) return;
@@ -13751,15 +13754,16 @@ t-form__inputsbox_vertical-form t-form__inputsbox_inrow ">
                     ctx.fillText(hex, x + 10, y + 30);
                 });
 
-                canvas.toBlob(blob => {
-                    const link = document.createElement('a');
-                    link.href = URL.createObjectURL(blob);
-                    link.download = 'palette.png';
-                    link.click();
-                    URL.revokeObjectURL(link.href);
-                });
-            });
+                const dataUrl = canvas.toDataURL('image/png');
 
+                const link = document.createElement('a');
+                link.href = dataUrl;
+                link.download = 'palette-only.png';
+
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
 
         })();
     </script>
