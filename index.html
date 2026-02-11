@@ -13640,7 +13640,7 @@ t-form__inputsbox_vertical-form t-form__inputsbox_inrow ">
             downloadBtn.addEventListener('click', () => {
                 if (!originalImage || !paletteColors.length) return;
 
-                const SCALE = 1.2;
+                const SCALE = 2;
 
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
@@ -13650,7 +13650,7 @@ t-form__inputsbox_vertical-form t-form__inputsbox_inrow ">
                 const rows = 2;
                 const cols = 5;
 
-                const MAX_EXPORT_WIDTH = 1200;
+                const MAX_EXPORT_WIDTH = 800;
 
                 let imgWidth = originalImage.width;
                 let imgHeight = originalImage.height;
