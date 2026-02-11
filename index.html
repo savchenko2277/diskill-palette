@@ -7316,7 +7316,6 @@
 
             <div class="palette-widget__buttons">
                 <button id="downloadBtn">Скачать изображение с палитрой</button>
-                <button id="downloadSecondBtn">Скачать палитру</button>
                 <button id="replaceBtn">Заменить изображение</button>
             </div>
 
@@ -13691,15 +13690,26 @@ t-form__inputsbox_vertical-form t-form__inputsbox_inrow ">
                     ctx.fillText(hex, x + 10, y + 30);
                 });
 
-                const dataUrl = canvas.toDataURL('image/png');
+                canvas.toBlob(function (blob) {
+                    const url = URL.createObjectURL(blob);
 
-                const link = document.createElement('a');
-                link.href = dataUrl;
-                link.download = 'palette-with-image.png';
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = 'palette-only.png';
 
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+                    document.body.appendChild(link);
+                    link.click();
+
+                    setTimeout(() => {
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(url);
+                    }, 1000);
+                }, 'image/png');
+
+
+                setTimeout(() => {
+                    document.body.removeChild(link);
+                }, 1000);
             });
 
 
@@ -13762,7 +13772,10 @@ t-form__inputsbox_vertical-form t-form__inputsbox_inrow ">
 
                 document.body.appendChild(link);
                 link.click();
-                document.body.removeChild(link);
+
+                setTimeout(() => {
+                    document.body.removeChild(link);
+                }, 1000);
             });
 
         })();
