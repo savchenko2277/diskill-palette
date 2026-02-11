@@ -13670,7 +13670,14 @@ t-form__inputsbox_vertical-form t-form__inputsbox_inrow ">
                 ctx.fillStyle = '#ffffff';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                ctx.drawImage(originalImage, 0, 0);
+                ctx.drawImage(
+                    originalImage,
+                    0,
+                    0,
+                    imgWidth,
+                    imgHeight
+                );
+
 
                 ctx.fillStyle = '#000000';
                 ctx.font = '16px sans-serif';
