@@ -13650,8 +13650,17 @@ t-form__inputsbox_vertical-form t-form__inputsbox_inrow ">
                 const rows = 2;
                 const cols = 5;
 
-                const imgWidth = originalImage.width;
-                const imgHeight = originalImage.height;
+                const MAX_EXPORT_WIDTH = 1200;
+
+                let imgWidth = originalImage.width;
+                let imgHeight = originalImage.height;
+
+                if (imgWidth > MAX_EXPORT_WIDTH) {
+                    const ratio = MAX_EXPORT_WIDTH / imgWidth;
+                    imgWidth = MAX_EXPORT_WIDTH;
+                    imgHeight = Math.round(imgHeight * ratio);
+                }
+
 
                 canvas.width = imgWidth * SCALE;
                 canvas.height = (imgHeight + padding + swatchHeight * rows) * SCALE;
