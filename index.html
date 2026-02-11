@@ -13640,7 +13640,7 @@ t-form__inputsbox_vertical-form t-form__inputsbox_inrow ">
             downloadBtn.addEventListener('click', () => {
                 if (!originalImage || !paletteColors.length) return;
 
-                const SCALE = 2;
+                const SCALE = 1.2;
 
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
@@ -13713,70 +13713,6 @@ t-form__inputsbox_vertical-form t-form__inputsbox_inrow ">
             });
 
 
-            downloadSecondBtn.addEventListener('click', () => {
-                if (!paletteColors.length) return;
-
-                const SCALE = 2;
-
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-
-                const padding = 40;
-                const swatchHeight = 80;
-                const rows = 2;
-                const cols = 5;
-
-                const imgWidth = 500;
-                const imgHeight = 0;
-
-                canvas.width = imgWidth * SCALE;
-                canvas.height = (imgHeight + padding + swatchHeight * rows) * SCALE;
-
-                ctx.scale(SCALE, SCALE);
-
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                ctx.fillStyle = '#000000';
-                ctx.font = '16px sans-serif';
-                ctx.fillText(
-                    'Сгенерировано на diskill.ru',
-                    10,
-                    imgHeight + 25
-                );
-
-                paletteColors.forEach((hex, i) => {
-                    const col = i % cols;
-                    const row = Math.floor(i / cols);
-
-                    const x = col * (imgWidth / cols);
-                    const y = imgHeight + padding + row * swatchHeight;
-
-                    ctx.fillStyle = hex;
-                    ctx.fillRect(
-                        x,
-                        y,
-                        imgWidth / cols,
-                        swatchHeight
-                    );
-
-                    ctx.fillStyle = '#000000';
-                    ctx.fillText(hex, x + 10, y + 30);
-                });
-
-                const dataUrl = canvas.toDataURL('image/png');
-
-                const link = document.createElement('a');
-                link.href = dataUrl;
-                link.download = 'palette-only.png';
-
-                document.body.appendChild(link);
-                link.click();
-
-                setTimeout(() => {
-                    document.body.removeChild(link);
-                }, 1000);
-            });
 
         })();
     </script>
